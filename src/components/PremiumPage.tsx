@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Check, Crown, Star, Shield, Users, MapPin, AlertTriangle, BarChart, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,11 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+interface PlanType {
+  name: string;
+  price: { monthly: number; annual: number };
+  popular?: boolean;
+  description: string;
+  features: string[];
+  limitations?: string[];
+}
+
 const PremiumPage = () => {
   const [selectedPlan, setSelectedPlan] = useState('premium');
   const [billingCycle, setBillingCycle] = useState('monthly');
 
-  const plans = {
+  const plans: Record<string, PlanType> = {
     basic: {
       name: 'Basic',
       price: { monthly: 0, annual: 0 },
