@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MapPin, Camera, Star, AlertTriangle, Clock, Shield, Users, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useCreateSafetyReport } from '@/hooks/useSafetyReports';
 import { useSafetyLocations } from '@/hooks/useSafetyLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import PhotoUpload from '@/components/PhotoUpload';
 
 const ContributePage = () => {
   const { user } = useAuth();
@@ -30,17 +30,22 @@ const ContributePage = () => {
     culturalSensitivity: [4],
     experience: '',
     recommendations: '',
-    wouldReturn: true
+    wouldReturn: true,
+    photos: [] as string[]
   });
 
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 5; // Updated to include photo step
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handlePhotosChange = (photos: string[]) => {
+    handleInputChange('photos', photos);
   };
 
   const handleSubmit = async () => {
@@ -62,8 +67,6 @@ const ContributePage = () => {
     if (existingLocation) {
       locationId = existingLocation.id;
     } else {
-      // For now, we'll use the first location's ID as a placeholder
-      // In a real app, you'd create a new location first
       locationId = locations?.[0]?.id || '';
       if (!locationId) {
         toast({
@@ -90,7 +93,8 @@ const ContributePage = () => {
         location_name: formData.location,
         establishment_type: formData.establishmentType,
         recommendations: formData.recommendations,
-        would_return: formData.wouldReturn
+        would_return: formData.wouldReturn,
+        photos: formData.photos // Include photos in travel context
       }
     };
 
@@ -113,7 +117,8 @@ const ContributePage = () => {
           culturalSensitivity: [4],
           experience: '',
           recommendations: '',
-          wouldReturn: true
+          wouldReturn: true,
+          photos: []
         });
         setCurrentStep(1);
       },
@@ -362,6 +367,19 @@ const ContributePage = () => {
         );
 
       case 4:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Photos & Documentation</h3>
+              <PhotoUpload 
+                onPhotosChange={handlePhotosChange}
+                maxPhotos={5}
+              />
+            </div>
+          </div>
+        );
+
+      case 5:
         return (
           <div className="space-y-6">
             <div>

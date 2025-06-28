@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Filter, MapPin, AlertTriangle, Shield, Users, Star, Navigation, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,18 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSafetyLocations, SafetyLocation } from '@/hooks/useSafetyLocations';
 import { useSafetyReports } from '@/hooks/useSafetyReports';
+import InteractiveMap from '@/components/InteractiveMap';
 
 const MapPage = () => {
   const [selectedLocation, setSelectedLocation] = useState<SafetyLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterZone, setFilterZone] = useState<string>('');
   
   const { data: locations, isLoading: locationsLoading, error: locationsError } = useSafetyLocations();
   const { data: reports } = useSafetyReports(selectedLocation?.id);
 
-  const filteredLocations = locations?.filter(location =>
-    location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    location.address.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredLocations = locations?.filter(location => {
+    const matchesSearch = location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      location.address.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesZone = !filterZone || location.safety_zone === filterZone;
+    return matchesSearch && matchesZone;
+  }) || [];
 
   const getZoneColor = (zone: string) => {
     switch (zone) {
@@ -77,13 +80,25 @@ const MapPage = () => {
             
             {/* Quick Filters */}
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+              <Badge 
+                variant={filterZone === 'green' ? "default" : "outline"} 
+                className="text-emerald-600 border-emerald-200 cursor-pointer"
+                onClick={() => setFilterZone(filterZone === 'green' ? '' : 'green')}
+              >
                 Safe Zones
               </Badge>
-              <Badge variant="outline" className="text-amber-600 border-amber-200">
+              <Badge 
+                variant={filterZone === 'yellow' ? "default" : "outline"} 
+                className="text-amber-600 border-amber-200 cursor-pointer"
+                onClick={() => setFilterZone(filterZone === 'yellow' ? '' : 'yellow')}
+              >
                 Caution Areas
               </Badge>
-              <Badge variant="outline" className="text-red-600 border-red-200">
+              <Badge 
+                variant={filterZone === 'red' ? "default" : "outline"} 
+                className="text-red-600 border-red-200 cursor-pointer"
+                onClick={() => setFilterZone(filterZone === 'red' ? '' : 'red')}
+              >
                 High Risk
               </Badge>
             </div>
@@ -146,53 +161,11 @@ const MapPage = () => {
 
         {/* Map Area */}
         <div className="flex-1 relative">
-          {/* Map Placeholder */}
-          <div 
-            className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          >
-            <div className="text-center">
-              <MapPin className="h-16 w-16 text-emerald-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-700 mb-2">Interactive Map</h3>
-              <p className="text-slate-600 max-w-md">
-                Mapbox integration would be implemented here with custom safety zone overlays, 
-                real-time data, and interactive markers for detailed safety information.
-              </p>
-            </div>
-          </div>
-
-          {/* Map Controls */}
-          <div className="absolute top-4 right-4 space-y-2">
-            <Button size="sm" className="bg-white text-slate-700 shadow-lg hover:bg-gray-50">
-              <MapPin className="h-4 w-4 mr-2" />
-              My Location
-            </Button>
-            <Button size="sm" className="bg-white text-slate-700 shadow-lg hover:bg-gray-50">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Report Issue
-            </Button>
-          </div>
-
-          {/* Legend */}
-          <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4">
-            <h4 className="font-semibold text-slate-900 mb-3">Safety Zones</h4>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-emerald-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">Safe - Low risk, well-lit, good security</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-amber-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">Caution - Moderate risk, be aware</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                <span className="text-sm text-slate-700">High Risk - Avoid, especially at night</span>
-              </div>
-            </div>
-          </div>
+          <InteractiveMap
+            locations={filteredLocations}
+            selectedLocation={selectedLocation}
+            onLocationSelect={setSelectedLocation}
+          />
         </div>
       </div>
 
