@@ -1,14 +1,23 @@
 
 import React, { useState } from 'react';
-import { MapPin, Camera, Star, AlertTriangle, Clock, Shield, Users, CheckCircle } from 'lucide-react';
+import { MapPin, Camera, Star, AlertTriangle, Clock, Shield, Users, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { useCreateSafetyReport } from '@/hooks/useSafetyReports';
+import { useSafetyLocations } from '@/hooks/useSafetyLocations';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const ContributePage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { data: locations } = useSafetyLocations();
+  const createReportMutation = useCreateSafetyReport();
+
   const [formData, setFormData] = useState({
     location: '',
     establishmentType: '',
@@ -32,6 +41,121 @@ const ContributePage = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to submit a safety report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find or create location
+    let locationId = '';
+    const existingLocation = locations?.find(loc => 
+      loc.name.toLowerCase() === formData.location.toLowerCase()
+    );
+
+    if (existingLocation) {
+      locationId = existingLocation.id;
+    } else {
+      // For now, we'll use the first location's ID as a placeholder
+      // In a real app, you'd create a new location first
+      locationId = locations?.[0]?.id || '';
+      if (!locationId) {
+        toast({
+          title: "Error",
+          description: "No locations available. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    const reportData = {
+      location_id: locationId,
+      overall_rating: formData.overallRating[0],
+      harassment_frequency: getHarassmentLevel(formData.harassmentLevel[0]),
+      nighttime_safety: getNighttimeSafety(formData.nighttimeSafety[0]),
+      lighting_quality: getLightingQuality(formData.lightingQuality[0]),
+      security_presence: getSecurityPresence(formData.securityPresence[0]),
+      staff_responsiveness: getStaffResponsiveness(formData.staffResponsiveness[0]),
+      cultural_sensitivity: getCulturalSensitivity(formData.culturalSensitivity[0]),
+      comments: formData.experience || null,
+      is_verified: false,
+      travel_context: {
+        location_name: formData.location,
+        establishment_type: formData.establishmentType,
+        recommendations: formData.recommendations,
+        would_return: formData.wouldReturn
+      }
+    };
+
+    createReportMutation.mutate(reportData, {
+      onSuccess: () => {
+        toast({
+          title: "Report Submitted Successfully!",
+          description: "Thank you for contributing to our community's safety.",
+        });
+        // Reset form
+        setFormData({
+          location: '',
+          establishmentType: '',
+          overallRating: [4],
+          harassmentLevel: [2],
+          nighttimeSafety: [3],
+          lightingQuality: [4],
+          securityPresence: [3],
+          staffResponsiveness: [4],
+          culturalSensitivity: [4],
+          experience: '',
+          recommendations: '',
+          wouldReturn: true
+        });
+        setCurrentStep(1);
+      },
+      onError: (error) => {
+        console.error('Error submitting report:', error);
+        toast({
+          title: "Submission Failed",
+          description: "There was an error submitting your report. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const getHarassmentLevel = (value: number) => {
+    const levels = ['low', 'low', 'medium', 'medium', 'high'];
+    return levels[value - 1] || 'medium';
+  };
+
+  const getNighttimeSafety = (value: number) => {
+    const levels = ['avoid', 'caution', 'caution', 'safe', 'safe'];
+    return levels[value - 1] || 'caution';
+  };
+
+  const getLightingQuality = (value: number) => {
+    const levels = ['poor', 'poor', 'good', 'good', 'excellent'];
+    return levels[value - 1] || 'good';
+  };
+
+  const getSecurityPresence = (value: number) => {
+    const levels = ['none', 'low', 'medium', 'high', 'high'];
+    return levels[value - 1] || 'medium';
+  };
+
+  const getStaffResponsiveness = (value: number) => {
+    const levels = ['poor', 'fair', 'good', 'good', 'excellent'];
+    return levels[value - 1] || 'good';
+  };
+
+  const getCulturalSensitivity = (value: number) => {
+    const levels = ['low', 'low', 'medium', 'high', 'high'];
+    return levels[value - 1] || 'medium';
   };
 
   const getRatingLabel = (value: number, type: string) => {
@@ -80,13 +204,13 @@ const ContributePage = () => {
                     Type of Place
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {['Hotel', 'Restaurant', 'Neighborhood', 'Transport Hub', 'Tourist Site', 'Shopping Area', 'Nightlife', 'Other'].map((type) => (
+                    {['hotel', 'restaurant', 'neighborhood', 'transport', 'attraction', 'shopping', 'nightlife', 'other'].map((type) => (
                       <Button
                         key={type}
                         variant={formData.establishmentType === type ? "default" : "outline"}
                         size="sm"
                         onClick={() => handleInputChange('establishmentType', type)}
-                        className="text-xs"
+                        className="text-xs capitalize"
                       >
                         {type}
                       </Button>
@@ -335,12 +459,24 @@ const ContributePage = () => {
                     <Button
                       onClick={() => setCurrentStep(Math.min(totalSteps, currentStep + 1))}
                       className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={currentStep === 1 && !formData.location}
                     >
                       Next Step
                     </Button>
                   ) : (
-                    <Button className="bg-emerald-600 hover:bg-emerald-700">
-                      Submit Review
+                    <Button 
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={handleSubmit}
+                      disabled={createReportMutation.isPending || !formData.location}
+                    >
+                      {createReportMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        'Submit Review'
+                      )}
                     </Button>
                   )}
                 </div>

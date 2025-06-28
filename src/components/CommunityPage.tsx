@@ -1,113 +1,30 @@
-
 import React, { useState } from 'react';
-import { MessageSquare, Users, Heart, Share, Search, Filter, MapPin, Calendar, User, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Users, Heart, Share, Search, Filter, MapPin, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSafetyDiscussions } from '@/hooks/useSafetyDiscussions';
+import { useTravelBuddies } from '@/hooks/useTravelBuddies';
 
 const CommunityPage = () => {
   const [activeTab, setActiveTab] = useState('discussions');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock data
-  const discussions = [
-    {
-      id: 1,
-      title: "Solo travel tips for Southeast Asia",
-      author: "Sarah M.",
-      location: "Bangkok, Thailand",
-      time: "2 hours ago",
-      replies: 15,
-      likes: 23,
-      tags: ["solo-travel", "southeast-asia", "safety-tips"],
-      preview: "Just returned from an amazing 3-week solo trip through Thailand, Vietnam, and Cambodia. Here are my top safety tips that really made a difference...",
-      verified: true
-    },
-    {
-      id: 2,
-      title: "Is downtown Mexico City safe for women at night?",
-      author: "Maria L.",
-      location: "Mexico City, Mexico",
-      time: "5 hours ago",
-      replies: 8,
-      likes: 12,
-      tags: ["mexico-city", "nighttime-safety", "local-advice"],
-      preview: "Planning to stay in the historic center area and wondering about safety after dark. Any recent experiences or recommendations?",
-      verified: true
-    },
-    {
-      id: 3,
-      title: "Found an amazing female-only hostel in Istanbul",
-      author: "Fatima K.",
-      location: "Istanbul, Turkey",
-      time: "1 day ago",
-      replies: 22,
-      likes: 45,
-      tags: ["accommodation", "istanbul", "female-friendly"],
-      preview: "This place was a game-changer for my Istanbul experience. Great security, amazing community of female travelers, and perfect location...",
-      verified: true
-    }
-  ];
+  const { data: discussions, isLoading: discussionsLoading } = useSafetyDiscussions();
+  const { data: travelBuddies, isLoading: buddiesLoading } = useTravelBuddies();
 
-  const travelBuddies = [
-    {
-      id: 1,
-      name: "Emily R.",
-      age: 28,
-      location: "Barcelona, Spain",
-      dates: "March 15-22, 2024",
-      interests: ["museums", "local-food", "walking-tours"],
-      experience: "experienced",
-      verified: true,
-      photo: "E"
-    },
-    {
-      id: 2,
-      name: "Lisa P.",
-      age: 32,
-      location: "Tokyo, Japan",
-      dates: "April 5-12, 2024",
-      interests: ["culture", "temples", "street-food"],
-      experience: "intermediate",
-      verified: true,
-      photo: "L"
-    },
-    {
-      id: 3,
-      name: "Anna K.",
-      age: 25,
-      location: "Paris, France",
-      dates: "May 10-17, 2024",
-      interests: ["art", "cafes", "photography"],
-      experience: "beginner",
-      verified: true,
-      photo: "A"
-    }
-  ];
+  const filteredDiscussions = discussions?.filter(discussion =>
+    discussion.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    discussion.content.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  const safetyAlerts = [
-    {
-      id: 1,
-      type: "warning",
-      location: "Rome, Italy",
-      title: "Increased pickpocket activity near Colosseum",
-      time: "3 hours ago",
-      details: "Multiple reports of organized pickpocket groups targeting tourists. Extra caution advised.",
-      severity: "medium"
-    },
-    {
-      id: 2,
-      type: "info",
-      location: "Prague, Czech Republic",
-      title: "New women-only transportation service launched",
-      time: "1 day ago",
-      details: "Pink Taxi now offers verified female drivers for women traveling alone in Prague.",
-      severity: "low"
-    }
-  ];
+  const filteredBuddies = travelBuddies?.filter(buddy =>
+    buddy.destination.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  const getExperienceBadge = (level: string) => {
+  const getExperienceBadge = (level: string | null) => {
     const colors = {
       beginner: "bg-green-100 text-green-800",
       intermediate: "bg-blue-100 text-blue-800",
@@ -116,12 +33,21 @@ const CommunityPage = () => {
     return colors[level as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'border-red-500 bg-red-50';
-      case 'medium': return 'border-amber-500 bg-amber-50';
-      default: return 'border-blue-500 bg-blue-50';
-    }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const formatDateRange = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
   };
 
   return (
@@ -162,6 +88,8 @@ const CommunityPage = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     placeholder="Search discussions, destinations, or topics..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
                   />
                 </div>
@@ -175,112 +103,160 @@ const CommunityPage = () => {
               </div>
 
               <TabsContent value="discussions" className="space-y-6">
-                {discussions.map((discussion) => (
-                  <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-slate-900 mb-2 hover:text-emerald-600">
-                            {discussion.title}
-                          </h3>
-                          <div className="flex items-center space-x-4 text-sm text-slate-600 mb-3">
-                            <div className="flex items-center space-x-1">
-                              <User className="h-4 w-4" />
-                              <span>{discussion.author}</span>
-                              {discussion.verified && (
-                                <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs">✓</span>
-                                </div>
+                {discussionsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                  </div>
+                ) : filteredDiscussions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-slate-600">No discussions found. Start the conversation!</p>
+                  </div>
+                ) : (
+                  filteredDiscussions.map((discussion) => (
+                    <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              {discussion.is_pinned && (
+                                <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+                                  Pinned
+                                </Badge>
+                              )}
+                              {discussion.is_closed && (
+                                <Badge variant="outline" className="text-red-600 border-red-200">
+                                  Closed
+                                </Badge>
+                              )}
+                              {discussion.category && (
+                                <Badge variant="secondary" className="text-xs capitalize">
+                                  {discussion.category}
+                                </Badge>
                               )}
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="h-4 w-4" />
-                              <span>{discussion.location}</span>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2 hover:text-emerald-600">
+                              {discussion.title}
+                            </h3>
+                            <div className="flex items-center space-x-4 text-sm text-slate-600 mb-3">
+                              <div className="flex items-center space-x-1">
+                                <User className="h-4 w-4" />
+                                <span>Anonymous User</span>
+                              </div>
+                              {discussion.location_reference && (
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{discussion.location_reference}</span>
+                                </div>
+                              )}
+                              <span>{formatDate(discussion.created_at)}</span>
                             </div>
-                            <span>{discussion.time}</span>
-                          </div>
-                          <p className="text-slate-700 mb-4">{discussion.preview}</p>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {discussion.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
-                                #{tag}
-                              </Badge>
-                            ))}
+                            <p className="text-slate-700 mb-4 line-clamp-3">{discussion.content}</p>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-slate-600">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <MessageSquare className="h-4 w-4" />
-                            <span>{discussion.replies} replies</span>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <MessageSquare className="h-4 w-4" />
+                              <span>0 replies</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Heart className="h-4 w-4" />
+                              <span>0 likes</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span>{discussion.view_count} views</span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Heart className="h-4 w-4" />
-                            <span>{discussion.likes} likes</span>
-                          </div>
+                          <Button variant="ghost" size="sm">
+                            <Share className="h-4 w-4 mr-1" />
+                            Share
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <Share className="h-4 w-4 mr-1" />
-                          Share
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </TabsContent>
 
               <TabsContent value="travel-buddies" className="space-y-6">
-                {travelBuddies.map((buddy) => (
-                  <Card key={buddy.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-16 h-16 bg-emerald-200 rounded-full flex items-center justify-center">
-                          <span className="text-emerald-700 font-semibold text-xl">{buddy.photo}</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-lg font-semibold text-slate-900">{buddy.name}</h3>
-                            <span className="text-slate-600">• {buddy.age} years</span>
-                            {buddy.verified && (
+                {buddiesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                  </div>
+                ) : filteredBuddies.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-slate-600">No travel buddies found. Post your own request!</p>
+                  </div>
+                ) : (
+                  filteredBuddies.map((buddy) => (
+                    <Card key={buddy.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start space-x-4">
+                          <div className="w-16 h-16 bg-emerald-200 rounded-full flex items-center justify-center">
+                            <span className="text-emerald-700 font-semibold text-xl">
+                              {buddy.destination.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="text-lg font-semibold text-slate-900">Anonymous Traveler</h3>
+                              {buddy.age_range && (
+                                <span className="text-slate-600">• {buddy.age_range}</span>
+                              )}
                               <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
                                 <span className="text-white text-xs">✓</span>
                               </div>
+                              {buddy.experience_level && (
+                                <Badge className={getExperienceBadge(buddy.experience_level)}>
+                                  {buddy.experience_level}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm text-slate-600 mb-3">
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="h-4 w-4" />
+                                <span>{buddy.destination}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>{formatDateRange(buddy.travel_dates_start, buddy.travel_dates_end)}</span>
+                              </div>
+                            </div>
+                            {buddy.interests && buddy.interests.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {buddy.interests.map((interest) => (
+                                  <Badge key={interest} variant="outline" className="text-xs">
+                                    {interest}
+                                  </Badge>
+                                ))}
+                              </div>
                             )}
-                            <Badge className={getExperienceBadge(buddy.experience)}>
-                              {buddy.experience}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-slate-600 mb-3">
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="h-4 w-4" />
-                              <span>{buddy.location}</span>
+                            {buddy.languages && buddy.languages.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                <span className="text-sm text-slate-600">Languages:</span>
+                                {buddy.languages.map((language) => (
+                                  <Badge key={language} variant="secondary" className="text-xs">
+                                    {language}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex space-x-2">
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                                Connect
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                View Profile
+                              </Button>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="h-4 w-4" />
-                              <span>{buddy.dates}</span>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {buddy.interests.map((interest) => (
-                              <Badge key={interest} variant="outline" className="text-xs">
-                                {interest}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                              Connect
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              View Profile
-                            </Button>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </TabsContent>
 
               <TabsContent value="safety-tips" className="space-y-6">
@@ -351,31 +327,6 @@ const CommunityPage = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Safety Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-slate-900 flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  <span>Safety Alerts</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {safetyAlerts.map((alert) => (
-                  <div key={alert.id} className={`p-3 rounded-lg border-l-4 ${getSeverityColor(alert.severity)}`}>
-                    <div className="flex items-start justify-between mb-2">
-                      <h5 className="font-medium text-slate-900 text-sm">{alert.title}</h5>
-                      <span className="text-xs text-slate-600">{alert.time}</span>
-                    </div>
-                    <p className="text-xs text-slate-700 mb-2">{alert.details}</p>
-                    <div className="flex items-center space-x-1 text-xs text-slate-600">
-                      <MapPin className="h-3 w-3" />
-                      <span>{alert.location}</span>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
             {/* Community Stats */}
             <Card>
               <CardHeader>
@@ -385,20 +336,20 @@ const CommunityPage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Active Members</span>
-                  <span className="font-semibold text-emerald-600">25,847</span>
+                  <span className="text-slate-600">Active Discussions</span>
+                  <span className="font-semibold text-emerald-600">{discussions?.length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Countries Covered</span>
-                  <span className="font-semibold text-emerald-600">120</span>
+                  <span className="text-slate-600">Travel Buddies</span>
+                  <span className="font-semibold text-emerald-600">{travelBuddies?.length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Safety Reports</span>
-                  <span className="font-semibold text-emerald-600">50,234</span>
+                  <span className="font-semibold text-emerald-600">234</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">This Week</span>
-                  <span className="font-semibold text-blue-600">+1,234</span>
+                  <span className="font-semibold text-blue-600">+12</span>
                 </div>
               </CardContent>
             </Card>

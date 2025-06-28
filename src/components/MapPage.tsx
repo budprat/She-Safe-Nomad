@@ -1,63 +1,24 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, MapPin, AlertTriangle, Shield, Users, Star, Navigation } from 'lucide-react';
+import { Search, Filter, MapPin, AlertTriangle, Shield, Users, Star, Navigation, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useSafetyLocations, SafetyLocation } from '@/hooks/useSafetyLocations';
+import { useSafetyReports } from '@/hooks/useSafetyReports';
 
 const MapPage = () => {
-  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedLocation, setSelectedLocation] = useState<SafetyLocation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const { data: locations, isLoading: locationsLoading, error: locationsError } = useSafetyLocations();
+  const { data: reports } = useSafetyReports(selectedLocation?.id);
 
-  // Mock data for demonstration
-  const safetyZones = [
-    {
-      id: 1,
-      name: "Old Town District",
-      zone: "green",
-      rating: 4.5,
-      reviews: 234,
-      coordinates: { lat: 40.7589, lng: -73.9851 },
-      safety: {
-        harassment: "low",
-        nighttime: "safe",
-        lighting: "excellent",
-        security: "high",
-        staff: "excellent"
-      }
-    },
-    {
-      id: 2,
-      name: "Central Market Area",
-      zone: "yellow",
-      rating: 3.2,
-      reviews: 156,
-      coordinates: { lat: 40.7505, lng: -73.9934 },
-      safety: {
-        harassment: "medium",
-        nighttime: "caution",
-        lighting: "good",
-        security: "medium",
-        staff: "good"
-      }
-    },
-    {
-      id: 3,
-      name: "Industrial Zone",
-      zone: "red",
-      rating: 2.1,
-      reviews: 89,
-      coordinates: { lat: 40.7614, lng: -73.9776 },
-      safety: {
-        harassment: "high",
-        nighttime: "avoid",
-        lighting: "poor",
-        security: "low",
-        staff: "poor"
-      }
-    }
-  ];
+  const filteredLocations = locations?.filter(location =>
+    location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    location.address.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const getZoneColor = (zone: string) => {
     switch (zone) {
@@ -76,6 +37,22 @@ const MapPage = () => {
       default: return 'Unknown';
     }
   };
+
+  const formatLocationRating = (rating: number | null) => {
+    return rating ? rating.toFixed(1) : 'N/A';
+  };
+
+  if (locationsError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Error Loading Locations</h3>
+          <p className="text-slate-600">Unable to load safety locations. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,45 +91,56 @@ const MapPage = () => {
 
           {/* Location List */}
           <div className="p-4 space-y-4">
-            {safetyZones.map((location) => (
-              <Card 
-                key={location.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedLocation?.id === location.id ? 'ring-2 ring-emerald-500' : ''
-                }`}
-                onClick={() => setSelectedLocation(location)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900 mb-1">{location.name}</h3>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getZoneColor(location.zone)}`}></div>
-                        <span className="text-sm text-slate-600">{getZoneText(location.zone)}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-medium">{location.rating}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>{location.reviews} reviews</span>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-3 w-3" />
-                        <span>Active</span>
+            {locationsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              </div>
+            ) : filteredLocations.length === 0 ? (
+              <div className="text-center py-8">
+                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-slate-600">No locations found matching your search.</p>
+              </div>
+            ) : (
+              filteredLocations.map((location) => (
+                <Card 
+                  key={location.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    selectedLocation?.id === location.id ? 'ring-2 ring-emerald-500' : ''
+                  }`}
+                  onClick={() => setSelectedLocation(location)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900 mb-1">{location.name}</h3>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${getZoneColor(location.safety_zone)}`}></div>
+                          <span className="text-sm text-slate-600">{getZoneText(location.safety_zone)}</span>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Navigation className="h-3 w-3" />
-                        <span>0.5km</span>
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium">{formatLocationRating(location.overall_rating)}</span>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    <div className="flex items-center justify-between text-sm text-slate-600">
+                      <span className="capitalize">{location.location_type}</span>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-3 w-3" />
+                          <span>Active</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Navigation className="h-3 w-3" />
+                          <span>0.5km</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
 
@@ -218,15 +206,16 @@ const MapPage = () => {
                   <CardTitle className="text-2xl font-bold text-slate-900 mb-2">
                     {selectedLocation.name}
                   </CardTitle>
+                  <p className="text-slate-600 mb-2">{selectedLocation.address}</p>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className={`w-4 h-4 rounded-full ${getZoneColor(selectedLocation.zone)}`}></div>
-                      <span className="font-medium">{getZoneText(selectedLocation.zone)}</span>
+                      <div className={`w-4 h-4 rounded-full ${getZoneColor(selectedLocation.safety_zone)}`}></div>
+                      <span className="font-medium">{getZoneText(selectedLocation.safety_zone)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                      <span className="font-semibold">{selectedLocation.rating}</span>
-                      <span className="text-slate-600">({selectedLocation.reviews} reviews)</span>
+                      <span className="font-semibold">{formatLocationRating(selectedLocation.overall_rating)}</span>
+                      <span className="text-slate-600">({reports?.length || 0} reviews)</span>
                     </div>
                   </div>
                 </div>
@@ -245,19 +234,19 @@ const MapPage = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Harassment Frequency</span>
                       <span className={`text-sm font-medium ${
-                        selectedLocation.safety.harassment === 'low' ? 'text-emerald-600' : 
-                        selectedLocation.safety.harassment === 'medium' ? 'text-amber-600' : 'text-red-600'
+                        selectedLocation.harassment_frequency === 'low' ? 'text-emerald-600' : 
+                        selectedLocation.harassment_frequency === 'medium' ? 'text-amber-600' : 'text-red-600'
                       }`}>
-                        {selectedLocation.safety.harassment}
+                        {selectedLocation.harassment_frequency || 'Unknown'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Nighttime Safety</span>
                       <span className={`text-sm font-medium ${
-                        selectedLocation.safety.nighttime === 'safe' ? 'text-emerald-600' : 
-                        selectedLocation.safety.nighttime === 'caution' ? 'text-amber-600' : 'text-red-600'
+                        selectedLocation.nighttime_safety === 'safe' ? 'text-emerald-600' : 
+                        selectedLocation.nighttime_safety === 'caution' ? 'text-amber-600' : 'text-red-600'
                       }`}>
-                        {selectedLocation.safety.nighttime}
+                        {selectedLocation.nighttime_safety || 'Unknown'}
                       </span>
                     </div>
                   </div>
@@ -265,19 +254,19 @@ const MapPage = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Lighting Quality</span>
                       <span className={`text-sm font-medium ${
-                        selectedLocation.safety.lighting === 'excellent' ? 'text-emerald-600' : 
-                        selectedLocation.safety.lighting === 'good' ? 'text-amber-600' : 'text-red-600'
+                        selectedLocation.lighting_quality === 'excellent' ? 'text-emerald-600' : 
+                        selectedLocation.lighting_quality === 'good' ? 'text-amber-600' : 'text-red-600'
                       }`}>
-                        {selectedLocation.safety.lighting}
+                        {selectedLocation.lighting_quality || 'Unknown'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Security Presence</span>
                       <span className={`text-sm font-medium ${
-                        selectedLocation.safety.security === 'high' ? 'text-emerald-600' : 
-                        selectedLocation.safety.security === 'medium' ? 'text-amber-600' : 'text-red-600'
+                        selectedLocation.security_presence === 'high' ? 'text-emerald-600' : 
+                        selectedLocation.security_presence === 'medium' ? 'text-amber-600' : 'text-red-600'
                       }`}>
-                        {selectedLocation.safety.security}
+                        {selectedLocation.security_presence || 'Unknown'}
                       </span>
                     </div>
                   </div>
@@ -287,37 +276,29 @@ const MapPage = () => {
               {/* Recent Reviews */}
               <div>
                 <h4 className="font-semibold text-slate-900 mb-4">Recent Reviews</h4>
-                <div className="space-y-4">
-                  <div className="border-l-4 border-emerald-500 pl-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                        ))}
+                {reports && reports.length > 0 ? (
+                  <div className="space-y-4">
+                    {reports.slice(0, 3).map((report) => (
+                      <div key={report.id} className="border-l-4 border-emerald-500 pl-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`h-4 w-4 ${i < report.overall_rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                            ))}
+                          </div>
+                          <span className="text-sm text-slate-600">
+                            {new Date(report.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {report.comments && (
+                          <p className="text-sm text-slate-700">{report.comments}</p>
+                        )}
                       </div>
-                      <span className="text-sm text-slate-600">Sarah M. • 2 days ago</span>
-                    </div>
-                    <p className="text-sm text-slate-700">
-                      "Felt very safe walking here during the day and evening. Well-lit streets 
-                      and plenty of people around. Staff at local shops were helpful and respectful."
-                    </p>
+                    ))}
                   </div>
-                  
-                  <div className="border-l-4 border-amber-500 pl-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className="flex">
-                        {[...Array(3)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                        ))}
-                      </div>
-                      <span className="text-sm text-slate-600">Maria L. • 1 week ago</span>
-                    </div>
-                    <p className="text-sm text-slate-700">
-                      "Okay during daytime but I wouldn't recommend walking alone after dark. 
-                      Some areas feel a bit isolated despite being busy during the day."
-                    </p>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-slate-600">No reviews yet. Be the first to share your experience!</p>
+                )}
               </div>
 
               <div className="flex space-x-3">
