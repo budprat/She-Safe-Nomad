@@ -248,6 +248,62 @@ export type Database = {
         }
         Relationships: []
       }
+      business_certifications: {
+        Row: {
+          application_status: string
+          business_email: string
+          business_name: string
+          certification_expires_at: string | null
+          certification_features: Json | null
+          certification_level: string
+          certified_by: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          location_id: string
+          updated_at: string
+        }
+        Insert: {
+          application_status?: string
+          business_email: string
+          business_name: string
+          certification_expires_at?: string | null
+          certification_features?: Json | null
+          certification_level: string
+          certified_by?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          location_id: string
+          updated_at?: string
+        }
+        Update: {
+          application_status?: string
+          business_email?: string
+          business_name?: string
+          certification_expires_at?: string | null
+          certification_features?: Json | null
+          certification_level?: string
+          certified_by?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          location_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_certifications_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "safety_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           challenge_type: string | null
@@ -354,6 +410,54 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      discussion_replies: {
+        Row: {
+          content: string
+          created_at: string
+          discussion_id: string
+          id: string
+          is_solution: boolean | null
+          parent_reply_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          discussion_id: string
+          id?: string
+          is_solution?: boolean | null
+          parent_reply_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          discussion_id?: string
+          id?: string
+          is_solution?: boolean | null
+          parent_reply_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussion_replies_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "safety_discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discussion_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_replies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -826,6 +930,220 @@ export type Database = {
           },
         ]
       }
+      safety_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          created_by: string
+          description: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          location_id: string
+          severity: string
+          title: string
+          updated_at: string
+          verified_by: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          created_by: string
+          description: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_id: string
+          severity: string
+          title: string
+          updated_at?: string
+          verified_by?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_id?: string
+          severity?: string
+          title?: string
+          updated_at?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_alerts_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "safety_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_discussions: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          is_closed: boolean | null
+          is_pinned: boolean | null
+          location_reference: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean | null
+          is_pinned?: boolean | null
+          location_reference?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_closed?: boolean | null
+          is_pinned?: boolean | null
+          location_reference?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      safety_locations: {
+        Row: {
+          address: string
+          created_at: string
+          cultural_sensitivity: string | null
+          harassment_frequency: string | null
+          id: string
+          latitude: number
+          lighting_quality: string | null
+          location_type: string
+          longitude: number
+          name: string
+          nighttime_safety: string | null
+          overall_rating: number | null
+          safety_zone: string
+          security_presence: string | null
+          staff_responsiveness: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          cultural_sensitivity?: string | null
+          harassment_frequency?: string | null
+          id?: string
+          latitude: number
+          lighting_quality?: string | null
+          location_type: string
+          longitude: number
+          name: string
+          nighttime_safety?: string | null
+          overall_rating?: number | null
+          safety_zone?: string
+          security_presence?: string | null
+          staff_responsiveness?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          cultural_sensitivity?: string | null
+          harassment_frequency?: string | null
+          id?: string
+          latitude?: number
+          lighting_quality?: string | null
+          location_type?: string
+          longitude?: number
+          name?: string
+          nighttime_safety?: string | null
+          overall_rating?: number | null
+          safety_zone?: string
+          security_presence?: string | null
+          staff_responsiveness?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      safety_reports: {
+        Row: {
+          comments: string | null
+          created_at: string
+          cultural_sensitivity: string | null
+          harassment_frequency: string | null
+          id: string
+          is_verified: boolean | null
+          lighting_quality: string | null
+          location_id: string
+          nighttime_safety: string | null
+          overall_rating: number
+          security_presence: string | null
+          staff_responsiveness: string | null
+          travel_context: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          cultural_sensitivity?: string | null
+          harassment_frequency?: string | null
+          id?: string
+          is_verified?: boolean | null
+          lighting_quality?: string | null
+          location_id: string
+          nighttime_safety?: string | null
+          overall_rating: number
+          security_presence?: string | null
+          staff_responsiveness?: string | null
+          travel_context?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          cultural_sensitivity?: string | null
+          harassment_frequency?: string | null
+          id?: string
+          is_verified?: boolean | null
+          lighting_quality?: string | null
+          location_id?: string
+          nighttime_safety?: string | null
+          overall_rating?: number
+          security_presence?: string | null
+          staff_responsiveness?: string | null
+          travel_context?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_reports_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "safety_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scores: {
         Row: {
           company_id: string | null
@@ -1017,6 +1335,57 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_buddies: {
+        Row: {
+          age_range: string | null
+          contact_preferences: Json | null
+          created_at: string
+          destination: string
+          experience_level: string | null
+          id: string
+          interests: string[] | null
+          is_active: boolean | null
+          languages: string[] | null
+          travel_dates_end: string
+          travel_dates_start: string
+          travel_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_range?: string | null
+          contact_preferences?: Json | null
+          created_at?: string
+          destination: string
+          experience_level?: string | null
+          id?: string
+          interests?: string[] | null
+          is_active?: boolean | null
+          languages?: string[] | null
+          travel_dates_end: string
+          travel_dates_start: string
+          travel_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_range?: string | null
+          contact_preferences?: Json | null
+          created_at?: string
+          destination?: string
+          experience_level?: string | null
+          id?: string
+          interests?: string[] | null
+          is_active?: boolean | null
+          languages?: string[] | null
+          travel_dates_end?: string
+          travel_dates_start?: string
+          travel_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       upload_rate_limit: {
         Row: {
           id: string
@@ -1164,6 +1533,51 @@ export type Database = {
           session_token?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_verification: {
+        Row: {
+          countries_visited: number | null
+          created_at: string
+          credibility_score: number | null
+          id: string
+          safety_reports_count: number | null
+          travel_experience_years: number | null
+          updated_at: string
+          user_id: string
+          verification_documents: Json | null
+          verification_level: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          countries_visited?: number | null
+          created_at?: string
+          credibility_score?: number | null
+          id?: string
+          safety_reports_count?: number | null
+          travel_experience_years?: number | null
+          updated_at?: string
+          user_id: string
+          verification_documents?: Json | null
+          verification_level?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          countries_visited?: number | null
+          created_at?: string
+          credibility_score?: number | null
+          id?: string
+          safety_reports_count?: number | null
+          travel_experience_years?: number | null
+          updated_at?: string
+          user_id?: string
+          verification_documents?: Json | null
+          verification_level?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }
