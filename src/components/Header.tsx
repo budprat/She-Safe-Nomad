@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -68,28 +69,29 @@ const Header = ({ currentPage, onNavigate }: HeaderProps) => {
             </Button>
           </nav>
         
-        <div className="flex items-center space-x-4">
-          {user ? (
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowProfile(true)}
+                  className="text-slate-600 hover:text-slate-900"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+                <UserButton onNavigate={onNavigate} />
+              </div>
+            ) : (
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowProfile(true)}
-                className="text-slate-600 hover:text-slate-900"
+                onClick={() => onNavigate('auth')}
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
-                <User className="h-4 w-4 mr-2" />
-                Profile
+                Sign In
               </Button>
-              <UserButton />
-            </div>
-          ) : (
-            <Button
-              onClick={() => onNavigate('auth')}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Sign In
-            </Button>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
