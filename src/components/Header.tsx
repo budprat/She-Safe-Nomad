@@ -1,9 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserButton } from '@/components/auth/UserButton';
+import UserButton from '@/components/auth/UserButton';
 import { User } from 'lucide-react';
 import UserProfile from '@/components/UserProfile';
 
