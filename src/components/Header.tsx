@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import UserButton from '@/components/auth/UserButton';
+import SOSButton from '@/components/SOSButton';
 import { User } from 'lucide-react';
 import UserProfile from '@/components/UserProfile';
 
@@ -71,6 +72,9 @@ const Header = ({ currentPage, onNavigate }: HeaderProps) => {
           </nav>
         
           <div className="flex items-center space-x-4">
+            {/* Emergency SOS Button - Only visible when signed in */}
+            {user && <SOSButton variant="header" />}
+
             {user ? (
               <div className="flex items-center space-x-3">
                 <Button

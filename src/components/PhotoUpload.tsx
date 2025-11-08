@@ -12,10 +12,45 @@ interface PhotoUploadProps {
 }
 
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotosChange, maxPhotos = 3 }) => {
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]); // Store file paths
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({}); // Store signed URLs for display
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Generate signed URLs for display
+  const getSignedUrl = async (path: string): Promise<string> => {
+    const { data, error } = await supabase.storage
+      .from('user-safety-photos')
+      .createSignedUrl(path, 3600); // 1 hour expiry
+
+    if (error || !data) {
+      console.error('Error generating signed URL:', error);
+      return '';
+    }
+
+    return data.signedUrl;
+  };
+
+  // Update signed URLs when photos change
+  React.useEffect(() => {
+    const updateUrls = async () => {
+      const newUrls: Record<string, string> = {};
+      for (const path of photos) {
+        if (!photoUrls[path]) {
+          const url = await getSignedUrl(path);
+          if (url) newUrls[path] = url;
+        } else {
+          newUrls[path] = photoUrls[path];
+        }
+      }
+      setPhotoUrls(newUrls);
+    };
+
+    if (photos.length > 0) {
+      updateUrls();
+    }
+  }, [photos]);
 
   const uploadPhoto = async (file: File): Promise<string | null> => {
     if (!user) return null;
@@ -23,21 +58,27 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotosChange, maxPhotos = 3
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
-        .from('safety-photos')
-        .upload(fileName, file);
+        .from('user-safety-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
+        toast({
+          title: "Upload failed",
+          description: uploadError.message,
+          variant: "destructive",
+        });
         return null;
       }
 
-      const { data } = supabase.storage
-        .from('safety-photos')
-        .getPublicUrl(fileName);
-
-      return data.publicUrl;
+      // Return the file path instead of public URL
+      // The consuming component will generate signed URLs as needed
+      return fileName;
     } catch (error) {
       console.error('Error uploading photo:', error);
       return null;
@@ -73,9 +114,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotosChange, maxPhotos = 3
         continue;
       }
 
-      const photoUrl = await uploadPhoto(file);
-      if (photoUrl) {
-        newPhotos.push(photoUrl);
+      const photoPath = await uploadPhoto(file);
+      if (photoPath) {
+        newPhotos.push(photoPath);
       }
     }
 
@@ -112,13 +153,19 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotosChange, maxPhotos = 3
       {/* Photo Preview Grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          {photos.map((photo, index) => (
+          {photos.map((photoPath, index) => (
             <div key={index} className="relative group">
-              <img
-                src={photo}
-                alt={`Safety report photo ${index + 1}`}
-                className="w-full h-20 object-cover rounded-lg border"
-              />
+              {photoUrls[photoPath] ? (
+                <img
+                  src={photoUrls[photoPath]}
+                  alt={`Safety report photo ${index + 1}`}
+                  className="w-full h-20 object-cover rounded-lg border"
+                />
+              ) : (
+                <div className="w-full h-20 bg-gray-200 rounded-lg border flex items-center justify-center">
+                  <Camera className="h-6 w-6 text-gray-400" />
+                </div>
+              )}
               <button
                 onClick={() => removePhoto(index)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"

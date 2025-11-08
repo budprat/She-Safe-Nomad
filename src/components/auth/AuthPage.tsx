@@ -10,33 +10,54 @@ import { Shield } from 'lucide-react';
 
 const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const { signUp, signIn, loading } = useAuth();
+  const { signUp, signIn, resetPassword, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
-    if (isSignUp) {
+    if (isForgotPassword) {
+      if (!email.trim()) {
+        setError('Please enter your email address');
+        return;
+      }
+      const { error } = await resetPassword(email);
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage('Password reset instructions have been sent to your email!');
+        setTimeout(() => setIsForgotPassword(false), 3000);
+      }
+    } else if (isSignUp) {
       if (!fullName.trim()) {
         setError('Please enter your full name');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long');
         return;
       }
       const { error } = await signUp(email, password, fullName);
       if (error) {
         setError(error.message);
       } else {
-        setMessage('Check your email for the confirmation link!');
+        setMessage('Success! Please check your email to verify your account before signing in.');
       }
     } else {
       const { error } = await signIn(email, password);
       if (error) {
-        setError(error.message);
+        if (error.message.includes('Email not confirmed')) {
+          setError('Please verify your email address before signing in. Check your inbox for the confirmation link.');
+        } else {
+          setError(error.message);
+        }
       }
     }
   };
@@ -54,17 +75,21 @@ const AuthPage = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+            <CardTitle>
+              {isForgotPassword ? 'Reset Password' : (isSignUp ? 'Create Account' : 'Welcome Back')}
+            </CardTitle>
             <CardDescription>
-              {isSignUp 
-                ? 'Join our community of safety-conscious travelers' 
-                : 'Sign in to access your safety dashboard'
-              }
+              {isForgotPassword
+                ? 'Enter your email to receive password reset instructions'
+                : (isSignUp
+                  ? 'Join our community of safety-conscious travelers'
+                  : 'Sign in to access your safety dashboard'
+                )}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
+              {isSignUp && !isForgotPassword && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
@@ -77,7 +102,7 @@ const AuthPage = () => {
                   />
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -90,18 +115,40 @@ const AuthPage = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  minLength={6}
-                />
-              </div>
+              {!isForgotPassword && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(true);
+                          setError('');
+                          setMessage('');
+                        }}
+                        className="text-xs text-pink-600 hover:text-pink-800"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    minLength={isSignUp ? 8 : 6}
+                  />
+                  {isSignUp && (
+                    <p className="text-xs text-gray-500">
+                      Password must be at least 8 characters long
+                    </p>
+                  )}
+                </div>
+              )}
 
               {error && (
                 <Alert variant="destructive">
@@ -116,25 +163,45 @@ const AuthPage = () => {
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                {loading
+                  ? 'Please wait...'
+                  : (isForgotPassword
+                    ? 'Send Reset Link'
+                    : (isSignUp ? 'Create Account' : 'Sign In')
+                  )
+                }
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError('');
-                  setMessage('');
-                }}
-                className="text-pink-600 hover:text-pink-800 text-sm"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : "Don't have an account? Sign up"
-                }
-              </button>
+            <div className="mt-6 text-center space-y-2">
+              {isForgotPassword ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-pink-600 hover:text-pink-800 text-sm"
+                >
+                  Back to sign in
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-pink-600 hover:text-pink-800 text-sm"
+                >
+                  {isSignUp
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up"
+                  }
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
