@@ -13,15 +13,16 @@ interface InteractiveMapProps {
   onLocationSelect: (location: SafetyLocation) => void;
 }
 
-const InteractiveMap: React.FC<InteractiveMapProps> = ({ 
-  locations, 
-  selectedLocation, 
-  onLocationSelect 
+const InteractiveMap: React.FC<InteractiveMapProps> = ({
+  locations,
+  selectedLocation,
+  onLocationSelect
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [tokenInputVisible, setTokenInputVisible] = useState(true);
+  const envToken = import.meta.env.VITE_MAPBOX_TOKEN;
+  const [mapboxToken, setMapboxToken] = useState(envToken || '');
+  const [tokenInputVisible, setTokenInputVisible] = useState(!envToken);
 
   const initializeMap = () => {
     if (!mapContainer.current || !mapboxToken) return;
