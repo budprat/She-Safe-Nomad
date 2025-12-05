@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { LogOut, User, Settings, Shield, FileText } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const UserButton: React.FC = () => {
@@ -51,12 +51,16 @@ const UserButton: React.FC = () => {
           </p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate('/settings')}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/community')}>
           <User className="mr-2 h-4 w-4" />
-          <span>My Profile</span>
+          <span>Community</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/contribute')}>
-          <Settings className="mr-2 h-4 w-4" />
+          <FileText className="mr-2 h-4 w-4" />
           <span>Submit Report</span>
         </DropdownMenuItem>
         {isAdmin && (

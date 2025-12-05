@@ -1,14 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield } from 'lucide-react';
+import { Shield, ArrowLeft } from 'lucide-react';
 
 const AuthPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -16,7 +19,17 @@ const AuthPage = () => {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const { signUp, signIn, resetPassword, loading } = useAuth();
+  const { user, signUp, signIn, resetPassword, loading } = useAuth();
+
+  // Get the redirect path from location state or default to home
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,13 +76,22 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Back to Home */}
+        <Link
+          to="/"
+          className="inline-flex items-center text-sm text-emerald-600 hover:text-emerald-700 mb-6"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back to Home
+        </Link>
+
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <Shield className="h-12 w-12 text-pink-600" />
+            <Shield className="h-12 w-12 text-emerald-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Safe Travels</h1>
+          <h1 className="text-3xl font-bold text-gray-900">She-Safe-Nomad</h1>
           <p className="text-gray-600 mt-2">Your trusted companion for safe journeys</p>
         </div>
 
@@ -127,7 +149,7 @@ const AuthPage = () => {
                           setError('');
                           setMessage('');
                         }}
-                        className="text-xs text-pink-600 hover:text-pink-800"
+                        className="text-xs text-emerald-600 hover:text-emerald-800"
                       >
                         Forgot password?
                       </button>
@@ -182,7 +204,7 @@ const AuthPage = () => {
                     setError('');
                     setMessage('');
                   }}
-                  className="text-pink-600 hover:text-pink-800 text-sm"
+                  className="text-emerald-600 hover:text-emerald-800 text-sm"
                 >
                   Back to sign in
                 </button>
@@ -194,7 +216,7 @@ const AuthPage = () => {
                     setError('');
                     setMessage('');
                   }}
-                  className="text-pink-600 hover:text-pink-800 text-sm"
+                  className="text-emerald-600 hover:text-emerald-800 text-sm"
                 >
                   {isSignUp
                     ? 'Already have an account? Sign in'

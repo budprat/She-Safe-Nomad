@@ -19,6 +19,7 @@ import PremiumPage from "@/components/PremiumPage";
 import CertificationPage from "@/components/CertificationPage";
 import AuthPage from "@/components/auth/AuthPage";
 import NotFound from "./pages/NotFound";
+import SettingsPage from "@/components/SettingsPage";
 
 // Admin Components
 import AdminDashboard from "@/components/admin/AdminDashboard";
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/community" element={<CommunityPage />} />
                 <Route path="/contribute" element={<ContributePage />} />
                 <Route path="/certification" element={<CertificationPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
 

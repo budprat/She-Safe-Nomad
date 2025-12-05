@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
-import { MessageSquare, Users, Heart, Share, Search, Filter, MapPin, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
+import { MessageSquare, Users, Heart, Share, Search, Filter, MapPin, Calendar, User, AlertTriangle, Loader2, ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSafetyDiscussions } from '@/hooks/useSafetyDiscussions';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useSafetyDiscussions, SafetyDiscussion } from '@/hooks/useSafetyDiscussions';
 import { useTravelBuddies } from '@/hooks/useTravelBuddies';
+import DiscussionReplies from '@/components/DiscussionReplies';
 
 const CommunityPage = () => {
   const [activeTab, setActiveTab] = useState('discussions');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDiscussion, setSelectedDiscussion] = useState<SafetyDiscussion | null>(null);
 
   const { data: discussions, isLoading: discussionsLoading } = useSafetyDiscussions();
   const { data: travelBuddies, isLoading: buddiesLoading } = useTravelBuddies();
@@ -114,7 +122,11 @@ const CommunityPage = () => {
                   </div>
                 ) : (
                   filteredDiscussions.map((discussion) => (
-                    <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card
+                      key={discussion.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => setSelectedDiscussion(discussion)}
+                    >
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
@@ -158,7 +170,7 @@ const CommunityPage = () => {
                           <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-1">
                               <MessageSquare className="h-4 w-4" />
-                              <span>0 replies</span>
+                              <span>{discussion.reply_count || 0} replies</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <Heart className="h-4 w-4" />
@@ -168,7 +180,7 @@ const CommunityPage = () => {
                               <span>{discussion.view_count} views</span>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
                             <Share className="h-4 w-4 mr-1" />
                             Share
                           </Button>
@@ -376,6 +388,82 @@ const CommunityPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Discussion Detail Dialog */}
+      <Dialog
+        open={!!selectedDiscussion}
+        onOpenChange={(open) => !open && setSelectedDiscussion(null)}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedDiscussion && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center space-x-2 mb-2">
+                  {selectedDiscussion.is_pinned && (
+                    <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+                      Pinned
+                    </Badge>
+                  )}
+                  {selectedDiscussion.is_closed && (
+                    <Badge variant="outline" className="text-red-600 border-red-200">
+                      Closed
+                    </Badge>
+                  )}
+                  {selectedDiscussion.category && (
+                    <Badge variant="secondary" className="text-xs capitalize">
+                      {selectedDiscussion.category}
+                    </Badge>
+                  )}
+                </div>
+                <DialogTitle className="text-xl font-bold text-slate-900 pr-8">
+                  {selectedDiscussion.title}
+                </DialogTitle>
+                <div className="flex items-center space-x-4 text-sm text-slate-600 mt-2">
+                  <div className="flex items-center space-x-1">
+                    <User className="h-4 w-4" />
+                    <span>Anonymous User</span>
+                  </div>
+                  {selectedDiscussion.location_reference && (
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>{selectedDiscussion.location_reference}</span>
+                    </div>
+                  )}
+                  <span>{formatDate(selectedDiscussion.created_at)}</span>
+                </div>
+              </DialogHeader>
+
+              {/* Discussion Content */}
+              <div className="py-4 border-b">
+                <p className="text-slate-700 whitespace-pre-wrap">
+                  {selectedDiscussion.content}
+                </p>
+                <div className="flex items-center space-x-4 mt-4 text-sm text-slate-600">
+                  <div className="flex items-center space-x-1">
+                    <Heart className="h-4 w-4" />
+                    <span>0 likes</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span>{selectedDiscussion.view_count} views</span>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    <Share className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
+                </div>
+              </div>
+
+              {/* Replies Section */}
+              <div className="pt-4">
+                <DiscussionReplies
+                  discussionId={selectedDiscussion.id}
+                  discussionOwnerId={selectedDiscussion.user_id}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

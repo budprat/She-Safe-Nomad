@@ -13,6 +13,7 @@ export interface SafetyDiscussion {
   is_pinned: boolean;
   is_closed: boolean;
   view_count: number;
+  reply_count: number;
   created_at: string;
   updated_at: string;
 }
