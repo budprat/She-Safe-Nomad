@@ -73,7 +73,7 @@ export function useCreateSOSAlert() {
         longitude: alertData.longitude,
       };
 
-      if (!location.latitude || !longitude) {
+      if (!location.latitude || !location.longitude) {
         try {
           const position = await getCurrentLocation();
           location = {
@@ -120,9 +120,33 @@ export function useCreateSOSAlert() {
           .update({ contacts_notified: contactIds })
           .eq('id', alert.id);
 
-        // In a real application, you would send SMS/Email notifications here
-        // For now, we'll just log it
-        console.log('Would notify contacts:', contacts);
+        // Trigger notification edge function
+        try {
+          const { error: notifyError } = await supabase.functions.invoke('send-sos-notifications', {
+            body: {
+              alert_id: alert.id,
+              user_id: user.id,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              alert_type: alertData.alert_type || 'emergency',
+              notes: alertData.notes,
+              contacts: contacts.map(c => ({
+                id: c.id,
+                name: c.name,
+                phone_number: c.phone_number,
+                email: c.email,
+              })),
+            },
+          });
+
+          if (notifyError) {
+            console.error('Notification error:', notifyError);
+            // Don't throw - alert was still created, just notification failed
+          }
+        } catch (notifyErr) {
+          console.error('Failed to send notifications:', notifyErr);
+          // Alert was created successfully, notification is secondary
+        }
       }
 
       return alert;

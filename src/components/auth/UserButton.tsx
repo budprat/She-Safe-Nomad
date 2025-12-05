@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,20 +10,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
-interface UserButtonProps {
-  onNavigate: (page: string) => void;
-}
-
-const UserButton: React.FC<UserButtonProps> = ({ onNavigate }) => {
+const UserButton: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
   const handleSignOut = async () => {
     await signOut();
-    onNavigate('home');
+    navigate('/');
   };
 
   const userInitials = user.user_metadata?.full_name
@@ -36,7 +35,7 @@ const UserButton: React.FC<UserButtonProps> = ({ onNavigate }) => {
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage src="" alt={user.user_metadata?.full_name || user.email} />
-            <AvatarFallback className="bg-pink-100 text-pink-600">
+            <AvatarFallback className="bg-emerald-100 text-emerald-600">
               {userInitials}
             </AvatarFallback>
           </Avatar>
@@ -52,14 +51,23 @@ const UserButton: React.FC<UserButtonProps> = ({ onNavigate }) => {
           </p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onNavigate('profile')}>
+        <DropdownMenuItem onClick={() => navigate('/community')}>
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>My Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onNavigate('settings')}>
+        <DropdownMenuItem onClick={() => navigate('/contribute')}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>Submit Report</span>
         </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <Shield className="mr-2 h-4 w-4 text-red-600" />
+              <span className="text-red-600">Admin Panel</span>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
